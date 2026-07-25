@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_incentive_dashboard" model="ir.actions.client">
+        <field name="name">Incentive Dashboard</field>
+        <field name="tag">admission_incentive_19.incentive_dashboard</field>
+    </record>
+
+    <menuitem id="menu_incentive_root" name="Admission Incentive" sequence="21"
+              groups="admission_incentive_19.group_incentive_manager"/>
+    <menuitem id="menu_incentive_dashboard" name="Incentive Dashboard"
+              parent="menu_incentive_root" action="action_incentive_dashboard" sequence="10"/>
+    <menuitem id="menu_incentive_balances" name="Balances to Collect"
+              parent="menu_incentive_root" action="action_incentive_pending_balances" sequence="20"/>
+    <menuitem id="menu_incentive_slab" name="Incentive Slabs"
+              parent="menu_incentive_root" action="action_incentive_slab" sequence="30"/>
+</odoo>

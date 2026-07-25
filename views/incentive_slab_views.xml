@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_incentive_slab_list" model="ir.ui.view">
+        <field name="name">incentive.slab.list</field>
+        <field name="model">incentive.slab</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="from_amount"/>
+                <field name="to_amount"/>
+                <field name="percentage"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_incentive_slab_form" model="ir.ui.view">
+        <field name="name">incentive.slab.form</field>
+        <field name="model">incentive.slab</field>
+        <field name="arch" type="xml">
+            <form string="Incentive Slab">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="from_amount"/>
+                        <field name="to_amount"/>
+                        <field name="percentage"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_incentive_slab" model="ir.actions.act_window">
+        <field name="name">Incentive Slabs</field>
+        <field name="res_model">incentive.slab</field>
+        <field name="view_mode">list,form</field>
+        <field name="help">
+            Define collection tiers, e.g. ₹0–1,00,000 → 3%, ₹1,00,000–1,25,000 → 4%.
+            An officer's whole monthly collection is commissioned at whichever
+            slab it reaches.
+        </field>
+    </record>
+</odoo>
