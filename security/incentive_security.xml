@@ -13,6 +13,12 @@
     <record id="group_incentive_manager" model="res.groups">
         <field name="name">Admission Incentive Manager</field>
         <field name="privilege_id" ref="privilege_incentive"/>
-        <field name="comment">Can configure slabs, assign officers, and view the incentive dashboard.</field>
+        <field name="comment">Can configure slabs, assign officers, and view the full incentive dashboard for all officers.</field>
+    </record>
+
+    <record id="group_admission_officer" model="res.groups">
+        <field name="name">Admission Officer (Incentive Wallet)</field>
+        <field name="privilege_id" ref="privilege_incentive"/>
+        <field name="comment">Can view their own incentive wallet only — their own collected amount, current slab, and assigned students.</field>
     </record>
 </odoo>

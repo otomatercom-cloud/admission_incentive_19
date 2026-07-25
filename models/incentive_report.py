@@ -1,7 +1,8 @@
 import calendar
 from datetime import datetime
 
-from odoo import api, models
+from odoo import _, api, models
+from odoo.exceptions import AccessError
 
 
 class HrEmployeeIncentiveReport(models.Model):
@@ -18,17 +19,36 @@ class HrEmployeeIncentiveReport(models.Model):
         return year, month, start, end
 
     @api.model
+    def _current_employee(self):
+        return self.env['hr.employee'].sudo().search(
+            [('user_id', '=', self.env.uid)], limit=1)
+
+    @api.model
+    def _is_incentive_manager(self):
+        return self.env.user.has_group('admission_incentive_19.group_incentive_manager')
+
+    @api.model
     def get_incentive_report(self, year=None, month=None):
         year, month, start, end = self._month_bounds(year, month)
         Slab = self.env['incentive.slab'].sudo()
         Enrollment = self.env['student.enrollment'].sudo()
         Payment = self.env['student.fee.payment'].sudo()
 
-        officer_ids = set(
-            self.env['lead.team.member'].sudo().search([]).mapped('employee_id').ids
-        )
-        assigned_enrollments = Enrollment.search([('assigned_officer_id', '!=', False)])
-        officer_ids |= set(assigned_enrollments.mapped('assigned_officer_id').ids)
+        is_manager = self._is_incentive_manager()
+        if is_manager:
+            officer_ids = set(
+                self.env['lead.team.member'].sudo().search([]).mapped('employee_id').ids
+            )
+            assigned_enrollments = Enrollment.search([('assigned_officer_id', '!=', False)])
+            officer_ids |= set(assigned_enrollments.mapped('assigned_officer_id').ids)
+        else:
+            # Self-service: an officer only ever sees their own row, no
+            # matter what — never trust a client-supplied officer filter.
+            me = self._current_employee()
+            officer_ids = {me.id} if me else set()
+            assigned_enrollments = Enrollment.search(
+                [('assigned_officer_id', 'in', list(officer_ids))]) if officer_ids \
+                else Enrollment.browse()
 
         officers_data = []
         total_collected = 0.0
@@ -40,17 +60,27 @@ class HrEmployeeIncentiveReport(models.Model):
                 lambda e: e.assigned_officer_id.id == officer.id)
             balance_now = sum(enrollments.mapped('due_amount'))
 
+            # Only FULLY paid admissions are incentive-eligible — a partial
+            # payment (e.g. admission fee only, or any amount short of the
+            # total) contributes nothing until the whole total_fee is
+            # settled. Once settled, the FULL total_fee counts (not just
+            # what was paid this month), attributed to whichever month the
+            # final/completing payment landed in.
             collected = 0.0
-            if enrollments:
-                payments = Payment.search([
-                    ('enrollment_id', 'in', enrollments.ids),
-                    ('payment_date', '>=', start[:10]),
-                    ('payment_date', '<=', end[:10]),
-                ])
-                collected = sum(payments.mapped('amount'))
+            pending_total_fee = 0.0
+            for e in enrollments:
+                if e.due_amount <= 0:
+                    last_payment = Payment.search(
+                        [('enrollment_id', '=', e.id)],
+                        order='payment_date desc', limit=1)
+                    completed_on = last_payment.payment_date if last_payment else False
+                    if completed_on and start[:10] <= completed_on.isoformat() <= end[:10]:
+                        collected += e.total_fee
+                else:
+                    pending_total_fee += e.total_fee
 
             commission, slab = Slab.calculate_incentive(collected)
-            potential_total = collected + balance_now
+            potential_total = collected + pending_total_fee
             potential_commission, potential_slab = Slab.calculate_incentive(potential_total)
 
             total_collected += collected
@@ -77,6 +107,7 @@ class HrEmployeeIncentiveReport(models.Model):
 
         return {
             'year': year, 'month': month,
+            'is_manager': is_manager,
             'summary': {
                 'total_collected': total_collected,
                 'total_balance_pending': total_balance,
@@ -95,6 +126,10 @@ class HrEmployeeIncentiveReport(models.Model):
         they owe, what's been collected from them this month, and their
         overall balance — answers 'how much did they collect and what's
         still pending' per student."""
+        if not self._is_incentive_manager():
+            me = self._current_employee()
+            if not me or me.id != int(officer_id):
+                raise AccessError(_("You can only view your own assigned students."))
         year, month, start, end = self._month_bounds(year, month)
         Enrollment = self.env['student.enrollment'].sudo()
         Payment = self.env['student.fee.payment'].sudo()
@@ -109,6 +144,11 @@ class HrEmployeeIncentiveReport(models.Model):
             ])
             last_payment = Payment.search(
                 [('enrollment_id', '=', e.id)], order='payment_date desc', limit=1)
+            completed_on = last_payment.payment_date if last_payment else False
+            counted = bool(
+                e.due_amount <= 0 and completed_on
+                and start[:10] <= completed_on.isoformat() <= end[:10]
+            )
             rows.append({
                 'enrollment_id': e.id,
                 'student_name': e.student_id.name,
@@ -117,6 +157,7 @@ class HrEmployeeIncentiveReport(models.Model):
                 'paid_amount': e.paid_amount,
                 'due_amount': e.due_amount,
                 'collected_this_month': sum(payments_this_month.mapped('amount')),
+                'counted_for_incentive': counted,
                 'last_payment_date': last_payment.payment_date.isoformat()
                     if last_payment and last_payment.payment_date else False,
             })

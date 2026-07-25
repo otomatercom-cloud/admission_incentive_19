@@ -40,6 +40,10 @@ export class IncentiveDashboard extends Component {
                 "hr.employee", "get_incentive_report",
                 [this.state.year, this.state.month]
             );
+            const officers = this.officers;
+            if (officers.length === 1) {
+                await this.toggleOfficer(officers[0]);
+            }
         } catch (e) {
             console.error("Incentive report load failed", e);
             this.state.error = "Failed to load incentive report. Please refresh.";
@@ -64,6 +68,10 @@ export class IncentiveDashboard extends Component {
 
     get summary() {
         return (this.state.data && this.state.data.summary) || {};
+    }
+
+    get isManager() {
+        return !!(this.state.data && this.state.data.is_manager);
     }
 
     get officers() {

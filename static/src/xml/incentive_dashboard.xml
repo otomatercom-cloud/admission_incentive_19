@@ -8,13 +8,14 @@
         <div>
             <div class="o_id_kicker">Admission Officers</div>
             <h1>Incentive Dashboard</h1>
-            <p>Slab-based monthly balance-collection incentive</p>
+            <p>Slab-based monthly balance-collection incentive — only fully
+               settled admissions count, at their full value.</p>
         </div>
         <div class="o_id_header_actions">
             <button type="button" class="btn btn-light" t-on-click="loadData" t-att-disabled="state.loading">
                 <i t-attf-class="fa {{ state.loading ? 'fa-spinner fa-spin' : 'fa-refresh' }} me-1"/>Refresh
             </button>
-            <button type="button" class="btn btn-secondary" t-on-click="openBalances">
+            <button type="button" class="btn btn-secondary" t-on-click="openBalances" t-if="isManager">
                 <i class="fa fa-list me-1"/>Balances to Collect
             </button>
         </div>
@@ -55,7 +56,9 @@
                 <div class="o_id_card_value">₹ <t t-esc="fmt(summary.total_collected)"/></div>
                 <div class="o_id_card_label">Collected This Month</div>
             </div>
-            <div class="o_id_card o_id_card_pending" style="cursor:pointer;" t-on-click="openBalances">
+            <div class="o_id_card o_id_card_pending"
+                 t-att-style="isManager ? 'cursor:pointer;' : ''"
+                 t-on-click="() => this.isManager &amp;&amp; this.openBalances()">
                 <div class="o_id_card_icon"><i class="fa fa-exclamation-triangle"/></div>
                 <div class="o_id_card_value">₹ <t t-esc="fmt(summary.total_balance_pending)"/></div>
                 <div class="o_id_card_label">Balance Still Pending</div>
@@ -140,7 +143,7 @@
                                             <th class="text-end">Total Fee ₹</th>
                                             <th class="text-end">Paid ₹</th>
                                             <th class="text-end">Due ₹</th>
-                                            <th class="text-end">Collected This Month ₹</th>
+                                            <th>Counted for Incentive?</th>
                                             <th>Last Payment</th>
                                         </tr>
                                     </thead>
@@ -154,7 +157,11 @@
                                             <td class="text-end" t-esc="fmt(st.total_fee)"/>
                                             <td class="text-end" t-esc="fmt(st.paid_amount)"/>
                                             <td class="text-end"><strong t-esc="fmt(st.due_amount)"/></td>
-                                            <td class="text-end" t-esc="fmt(st.collected_this_month)"/>
+                                            <td>
+                                                <span t-if="st.counted_for_incentive" class="badge text-bg-success">✓ Yes — ₹<t t-esc="fmt(st.total_fee)"/></span>
+                                                <span t-elif="st.due_amount &gt; 0" class="badge text-bg-secondary">Not fully paid yet</span>
+                                                <span t-else="" class="badge text-bg-light text-muted">Paid in a different month</span>
+                                            </td>
                                             <td t-esc="st.last_payment_date or '—'"/>
                                         </tr>
                                     </tbody>

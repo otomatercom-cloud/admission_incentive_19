@@ -5,12 +5,23 @@
         <field name="tag">admission_incentive_19.incentive_dashboard</field>
     </record>
 
+    <record id="action_my_incentive_wallet" model="ir.actions.client">
+        <field name="name">My Incentive Wallet</field>
+        <field name="tag">admission_incentive_19.incentive_dashboard</field>
+    </record>
+
     <menuitem id="menu_incentive_root" name="Admission Incentive" sequence="21"
+              groups="admission_incentive_19.group_incentive_manager,admission_incentive_19.group_admission_officer"/>
+    <menuitem id="menu_my_incentive_wallet" name="My Incentive Wallet"
+              parent="menu_incentive_root" action="action_my_incentive_wallet" sequence="5"
+              groups="admission_incentive_19.group_admission_officer"/>
+    <menuitem id="menu_incentive_dashboard" name="Incentive Dashboard (All Officers)"
+              parent="menu_incentive_root" action="action_incentive_dashboard" sequence="10"
               groups="admission_incentive_19.group_incentive_manager"/>
-    <menuitem id="menu_incentive_dashboard" name="Incentive Dashboard"
-              parent="menu_incentive_root" action="action_incentive_dashboard" sequence="10"/>
     <menuitem id="menu_incentive_balances" name="Balances to Collect"
-              parent="menu_incentive_root" action="action_incentive_pending_balances" sequence="20"/>
+              parent="menu_incentive_root" action="action_incentive_pending_balances" sequence="20"
+              groups="admission_incentive_19.group_incentive_manager"/>
     <menuitem id="menu_incentive_slab" name="Incentive Slabs"
-              parent="menu_incentive_root" action="action_incentive_slab" sequence="30"/>
+              parent="menu_incentive_root" action="action_incentive_slab" sequence="30"
+              groups="admission_incentive_19.group_incentive_manager"/>
 </odoo>
