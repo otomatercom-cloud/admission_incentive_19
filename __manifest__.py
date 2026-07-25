@@ -22,6 +22,7 @@
         'security/ir.model.access.csv',
         'wizard/bulk_assign_wizard_views.xml',
         'views/incentive_slab_views.xml',
+        'views/incentive_payout_views.xml',
         'views/enrollment_views.xml',
         'views/menus.xml',
     ],

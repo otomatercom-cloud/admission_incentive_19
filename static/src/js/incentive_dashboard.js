@@ -14,6 +14,7 @@ export class IncentiveDashboard extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
+        this.notification = useService("notification");
         const now = new Date();
         this.state = useState({
             loading: true,
@@ -24,6 +25,7 @@ export class IncentiveDashboard extends Component {
             expandedOfficerId: false,
             officerStudents: [],
             officerStudentsLoading: false,
+            generatingPayouts: false,
         });
         onWillStart(() => this.loadData());
     }
@@ -113,6 +115,40 @@ export class IncentiveDashboard extends Component {
             domain: [["due_amount", ">", 0]],
             target: "current",
         });
+    }
+
+    async generatePayouts() {
+        this.state.generatingPayouts = true;
+        try {
+            const result = await this.orm.call(
+                "hr.employee", "generate_payouts_for_month",
+                [this.state.year, this.state.month]
+            );
+            this.notification.add(
+                result.created
+                    ? `${result.created} payout(s) created.`
+                    : "No new payouts to create — all up to date.",
+                { type: "success" }
+            );
+            await this.loadData();
+        } finally {
+            this.state.generatingPayouts = false;
+        }
+    }
+
+    openPayout(officer, ev) {
+        if (ev) { ev.stopPropagation(); }
+        if (officer.payout_id) {
+            this.action.doAction({
+                type: "ir.actions.act_window",
+                name: "Incentive Payout",
+                res_model: "incentive.payout",
+                res_id: officer.payout_id,
+                view_mode: "form",
+                views: [[false, "form"]],
+                target: "current",
+            });
+        }
     }
 }
 

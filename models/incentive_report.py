@@ -87,6 +87,10 @@ class HrEmployeeIncentiveReport(models.Model):
             total_balance += balance_now
             total_commission += commission
 
+            payout = self.env['incentive.payout'].sudo().search([
+                ('officer_id', '=', officer.id), ('year', '=', year), ('month', '=', month),
+            ], limit=1)
+
             officers_data.append({
                 'officer_id': officer.id,
                 'officer_name': officer.name,
@@ -101,6 +105,10 @@ class HrEmployeeIncentiveReport(models.Model):
                 'potential_slab_name': potential_slab.name if potential_slab else False,
                 'potential_slab_percentage': potential_slab.percentage if potential_slab else 0.0,
                 'potential_commission': potential_commission,
+                'payout_id': payout.id if payout else False,
+                'payout_state': payout.state if payout else False,
+                'payout_paid': payout.paid_amount if payout else 0.0,
+                'payout_balance': payout.balance_amount if payout else 0.0,
             })
 
         officers_data.sort(key=lambda o: -o['collected'])
@@ -119,6 +127,33 @@ class HrEmployeeIncentiveReport(models.Model):
                 [('active', '=', True)],
                 ['name', 'from_amount', 'to_amount', 'percentage'], order='from_amount'),
         }
+
+    @api.model
+    def generate_payouts_for_month(self, year=None, month=None):
+        """Manager action: create a draft incentive.payout for every
+        officer with a non-zero incentive this month, skipping officers
+        who already have one (the unique constraint is a safety net,
+        this check avoids raising on the expected case)."""
+        if not self._is_incentive_manager():
+            raise AccessError(_("Only Incentive Managers can generate payouts."))
+
+        report = self.get_incentive_report(year, month)
+        Payout = self.env['incentive.payout'].sudo()
+        created = 0
+        for row in report['officers']:
+            if row['commission_earned'] <= 0 or row['payout_id']:
+                continue
+            Payout.create({
+                'officer_id': row['officer_id'],
+                'year': report['year'],
+                'month': report['month'],
+                'collected_amount': row['collected'],
+                'slab_name': row['slab_name'],
+                'slab_percentage': row['slab_percentage'],
+                'incentive_amount': row['commission_earned'],
+            })
+            created += 1
+        return {'created': created}
 
     @api.model
     def get_officer_assigned_students(self, officer_id, year=None, month=None):

@@ -18,6 +18,10 @@
             <button type="button" class="btn btn-secondary" t-on-click="openBalances" t-if="isManager">
                 <i class="fa fa-list me-1"/>Balances to Collect
             </button>
+            <button type="button" class="btn btn-primary" t-on-click="generatePayouts"
+                    t-if="isManager" t-att-disabled="state.generatingPayouts">
+                <i t-attf-class="fa {{ state.generatingPayouts ? 'fa-spinner fa-spin' : 'fa-money' }} me-1"/>Generate Payouts
+            </button>
         </div>
     </div>
 
@@ -103,6 +107,7 @@
                         <th class="text-end">Collected ₹</th>
                         <th>Current Slab</th>
                         <th class="text-end">Earned ₹</th>
+                        <th>Payout Status</th>
                         <th class="text-end">Balance Pending ₹</th>
                         <th>If Fully Collected</th>
                         <th class="text-end">Potential ₹</th>
@@ -110,7 +115,7 @@
                 </thead>
                 <tbody>
                     <tr t-if="!officers.length">
-                        <td colspan="8" class="text-center text-muted">No officers with assignments this month.</td>
+                        <td colspan="9" class="text-center text-muted">No officers with assignments this month.</td>
                     </tr>
                     <t t-foreach="officers" t-as="o" t-key="o.officer_id">
                         <tr style="cursor:pointer;" t-on-click="() => this.toggleOfficer(o)">
@@ -125,6 +130,22 @@
                                 <span t-else="" class="text-muted">—</span>
                             </td>
                             <td class="text-end"><strong t-esc="fmt(o.commission_earned)"/></td>
+                            <td>
+                                <span t-if="!o.payout_id" class="text-muted">Not generated</span>
+                                <span t-elif="o.payout_state == 'paid'"
+                                      t-attf-class="badge text-bg-success {{ isManager ? 'o_id_payout_link' : '' }}"
+                                      t-on-click="(ev) => this.isManager &amp;&amp; this.openPayout(o, ev)">Paid in full</span>
+                                <span t-elif="o.payout_state == 'partially_paid'"
+                                      t-attf-class="badge text-bg-warning {{ isManager ? 'o_id_payout_link' : '' }}"
+                                      t-on-click="(ev) => this.isManager &amp;&amp; this.openPayout(o, ev)">
+                                    Paid ₹<t t-esc="fmt(o.payout_paid)"/> · Bal ₹<t t-esc="fmt(o.payout_balance)"/>
+                                </span>
+                                <span t-else=""
+                                      t-attf-class="badge text-bg-info {{ isManager ? 'o_id_payout_link' : '' }}"
+                                      t-on-click="(ev) => this.isManager &amp;&amp; this.openPayout(o, ev)">
+                                    <t t-esc="o.payout_state"/>
+                                </span>
+                            </td>
                             <td class="text-end" t-esc="fmt(o.balance_pending)"/>
                             <td>
                                 <span t-if="o.potential_slab_name" class="badge text-bg-info" t-esc="o.potential_slab_name + ' (' + o.potential_slab_percentage + '%)'"/>
@@ -133,7 +154,7 @@
                             <td class="text-end"><strong t-esc="fmt(o.potential_commission)"/></td>
                         </tr>
                         <tr t-if="state.expandedOfficerId === o.officer_id">
-                            <td colspan="8" class="o_id_drilldown">
+                            <td colspan="9" class="o_id_drilldown">
                                 <div t-if="state.officerStudentsLoading" class="text-muted">Loading…</div>
                                 <table t-else="" class="table table-sm mb-0">
                                     <thead>

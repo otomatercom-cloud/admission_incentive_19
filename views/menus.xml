@@ -21,6 +21,9 @@
     <menuitem id="menu_incentive_balances" name="Balances to Collect"
               parent="menu_incentive_root" action="action_incentive_pending_balances" sequence="20"
               groups="admission_incentive_19.group_incentive_manager"/>
+    <menuitem id="menu_incentive_payout" name="Incentive Payouts"
+              parent="menu_incentive_root" action="action_incentive_payout" sequence="25"
+              groups="admission_incentive_19.group_incentive_manager"/>
     <menuitem id="menu_incentive_slab" name="Incentive Slabs"
               parent="menu_incentive_root" action="action_incentive_slab" sequence="30"
               groups="admission_incentive_19.group_incentive_manager"/>

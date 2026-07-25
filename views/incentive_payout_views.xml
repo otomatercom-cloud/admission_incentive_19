@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_incentive_payout_list" model="ir.ui.view">
+        <field name="name">incentive.payout.list</field>
+        <field name="model">incentive.payout</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'paid'"
+                  decoration-warning="state == 'partially_paid'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="officer_id"/>
+                <field name="period_label"/>
+                <field name="incentive_amount" sum="Total Incentive ₹"/>
+                <field name="paid_amount" sum="Total Paid ₹"/>
+                <field name="balance_amount" sum="Total Balance ₹"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'paid'"
+                       decoration-warning="state == 'partially_paid'"
+                       decoration-info="state == 'approved'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_incentive_payout_form" model="ir.ui.view">
+        <field name="name">incentive.payout.form</field>
+        <field name="model">incentive.payout</field>
+        <field name="arch" type="xml">
+            <form string="Incentive Payout">
+                <header>
+                    <button name="action_approve" type="object"
+                            string="Approve" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_cancel" type="object"
+                            string="Cancel" class="btn-secondary"
+                            invisible="state not in ('draft', 'approved')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,approved,partially_paid,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="display_name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Period">
+                            <field name="officer_id" readonly="1"/>
+                            <field name="period_label" readonly="1"/>
+                            <field name="collected_amount" readonly="1"/>
+                            <field name="slab_name" readonly="1"/>
+                            <field name="slab_percentage" readonly="1"/>
+                        </group>
+                        <group string="Amounts">
+                            <field name="incentive_amount" readonly="1"/>
+                            <field name="paid_amount" readonly="1"/>
+                            <field name="balance_amount" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payments" name="payments">
+                            <field name="payment_line_ids"
+                                   invisible="state in ('draft', 'cancelled')">
+                                <list editable="bottom">
+                                    <field name="payment_date"/>
+                                    <field name="amount"/>
+                                    <field name="payment_mode"/>
+                                    <field name="remarks"/>
+                                    <field name="paid_by" readonly="1"/>
+                                </list>
+                            </field>
+                            <p class="text-muted" invisible="state != 'draft'">
+                                Approve this payout first to start recording payments.
+                            </p>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_incentive_payout_search" model="ir.ui.view">
+        <field name="name">incentive.payout.search</field>
+        <field name="model">incentive.payout</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="officer_id"/>
+                <field name="period_label"/>
+                <filter name="filter_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_approved" string="Approved (Unpaid)" domain="[('state', '=', 'approved')]"/>
+                <filter name="filter_partial" string="Partially Paid" domain="[('state', '=', 'partially_paid')]"/>
+                <filter name="filter_paid" string="Fully Paid" domain="[('state', '=', 'paid')]"/>
+                <separator/>
+                <filter name="group_officer" string="Officer" context="{'group_by': 'officer_id'}"/>
+                <filter name="group_period" string="Period" context="{'group_by': 'period_label'}"/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_incentive_payout" model="ir.actions.act_window">
+        <field name="name">Incentive Payouts</field>
+        <field name="res_model">incentive.payout</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_incentive_payout_search"/>
+    </record>
+</odoo>

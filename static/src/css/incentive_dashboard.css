@@ -127,6 +127,10 @@
 .o_id_officer_table tbody tr:not(.o_id_drilldown):hover {
     background: #f9fafb;
 }
+.o_id_payout_link {
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
 .o_id_drilldown {
     background: #f9fafb;
     padding: 10px 14px !important;
